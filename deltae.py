@@ -1,39 +1,14 @@
 #!/usr/bin/python
 """ Check Lab values of deltae against
 modern ColorChecker."""
-import sys
 import os
 import re
+import argparse
+from statistics import stdev
 from PIL import Image
-from colormath.color_objects import LabColor
+from colormath.color_objects import LabColor, sRGBColor
 from colormath.color_diff import delta_e_cie2000
-
-# Official x-rite Lab values for
-# Colorchecker after Nov 2014
-cc_values = {'A1': LabColor(37.54, 14.37, 14.92),
-             'A2': LabColor(62.73, 35.83, 56.5),
-             'A3': LabColor(28.37, 15.42, -49.8),
-             'A4': LabColor(95.19, -1.03, 2.93),
-             'B1': LabColor(64.66, 19.27, 17.5),
-             'B2': LabColor(39.43, 10.75, -45.17),
-             'B3': LabColor(54.38, -39.72, 32.27),
-             'B4': LabColor(81.29, -0.57, 0.44),
-             'C1': LabColor(49.32, -3.82, -22.54),
-             'C2': LabColor(50.57, 48.64, 16.67),
-             'C3': LabColor(42.43, 51.05, 28.62),
-             'C4': LabColor(66.89, -0.75, -0.06),
-             'D1': LabColor(43.46, -12.74, 22.72),
-             'D2': LabColor(30.1, 22.54, -20.87),
-             'D3': LabColor(81.8, 2.67, 80.41),
-             'D4': LabColor(50.76, -0.13, 0.14),
-             'E1': LabColor(54.94, 9.61, -24.79),
-             'E2': LabColor(71.77, -24.13, 58.19),
-             'E3': LabColor(50.63, 51.28, -14.12),
-             'E4': LabColor(35.63, -0.46, -0.48),
-             'F1': LabColor(70.48, -32.26, -0.37),
-             'F2': LabColor(71.51, 18.24, 67.37),
-             'F3': LabColor(49.57, -29.71, -28.32),
-             'F4': LabColor(20.64, 0.07, -0.46)}
+from colormath.color_conversions import convert_color
 
 
 # Coordinates of middle of color square.
@@ -65,8 +40,60 @@ cc_coords = {'A1': (9.94, 14.33),
              'F4': (90.47, 86.49),
              }
 
+# Official x-rite Lab values for Colorchecker after Nov 2014
+cc_after2014 = {'A1': LabColor(37.54, 14.37, 14.92),
+                'A2': LabColor(62.73, 35.83, 56.5),
+                'A3': LabColor(28.37, 15.42, -49.8),
+                'A4': LabColor(95.19, -1.03, 2.93),
+                'B1': LabColor(64.66, 19.27, 17.5),
+                'B2': LabColor(39.43, 10.75, -45.17),
+                'B3': LabColor(54.38, -39.72, 32.27),
+                'B4': LabColor(81.29, -0.57, 0.44),
+                'C1': LabColor(49.32, -3.82, -22.54),
+                'C2': LabColor(50.57, 48.64, 16.67),
+                'C3': LabColor(42.43, 51.05, 28.62),
+                'C4': LabColor(66.89, -0.75, -0.06),
+                'D1': LabColor(43.46, -12.74, 22.72),
+                'D2': LabColor(30.1, 22.54, -20.87),
+                'D3': LabColor(81.8, 2.67, 80.41),
+                'D4': LabColor(50.76, -0.13, 0.14),
+                'E1': LabColor(54.94, 9.61, -24.79),
+                'E2': LabColor(71.77, -24.13, 58.19),
+                'E3': LabColor(50.63, 51.28, -14.12),
+                'E4': LabColor(35.63, -0.46, -0.48),
+                'F1': LabColor(70.48, -32.26, -0.37),
+                'F2': LabColor(71.51, 18.24, 67.37),
+                'F3': LabColor(49.57, -29.71, -28.32),
+                'F4': LabColor(20.64, 0.07, -0.46)}
+
+halflist = ("A3", "A4", "B3", "B4", "C3", "C4",
+            "D3", "D4", "E3", "E4", "F3", "F4")
+
+graylist = ("A4", "B4", "C4", "D4", "E4", "F4")
+
 text_extensions = ('.txt', '.csv')
 image_extenstions = ('.png', '.jpg', '.tif')
+
+
+def process_color_data(data_file) -> dict:
+    """Create dict with fields and values in Lab
+    :param data_file: name of file with data, no validation though
+    :type data_file: str
+    :return: dict with key: field name, value: lab values
+    :rtype: dict
+    """
+
+    try:
+        cc_vals = {}
+        with open(data_file, encoding="utf-8") as df:
+            for line in df:
+                field, Lab_L, Lab_a, Lab_b = line.split()
+                cc_vals[field] = LabColor(Lab_L, Lab_a, Lab_b)
+    except TypeError:
+        # When file not given use official values from x-rite
+        cc_vals = cc_after2014.copy()
+
+    return cc_vals
 
 
 def calculate_from_text(fname: str):
@@ -81,6 +108,9 @@ def calculate_from_text(fname: str):
     except IndexError:
         raise SystemExit("something wrong with file, didn't get 24 patches.")
 
+    if args.half:
+        patches = [x for x in patches if x.startswith(halflist)]
+
     deglobal = []
     for line in patches:
         data = line.strip().split(',')
@@ -91,47 +121,119 @@ def calculate_from_text(fname: str):
 
     # Calculate global average
     # total FADGI control requires a lot of more tests
-    deltae = sum(deglobal)/24
+    deltae = sum(deglobal)/len(patches)
+
     # Limit to 3 numbers after point, don't need 15
-    print(f"{deltae:.3f}")
+    print(f"dE: {deltae:.3f}")
 
 
 def calculate_from_image(fname: str):
     """Calculate deltae from image file by detectinc color squares.
     :param fname: file name
     :type fname: str
-    :return: name and values of patch
-    :rtype: Tuple(Str, Tuple)
     """
     cc_file = Image.open(fname)
 
-    image_values = dict()
+    image_values = {}
     for patch in cc_coords:
         patch_name, patch_vals = get_patch_value(patch, cc_file)
         image_values[patch_name] = LabColor(*patch_vals)
 
     deglobal = []
     for patch in cc_values:
-        point = delta_e_cie2000(cc_values[patch], image_values[patch])
+        point = delta_e_cie2000(cc_values[patch],
+                                image_values[patch])
         deglobal.append(point)
 
-    # Calculate global average
-    # total FADGI control requires a lot of more tests
-    deltae = sum(deglobal)/24
+    # Calculate parameters:
+    # Global dE
+    deltae = sum(deglobal)/len(deglobal)
+    # Tone response and White Balance
+    tone, wbalance = get_tone_wb(image_values, cc_values)
+    # Lightness uniformity
+    light = get_ligthness_uniformity(image_values, deglobal)
+    # Color accuracy
+    color_acc = get_color_accuracy(deltae)
+
     # Limit to 3 numbers after point, don't need 15
-    print(f"{deltae:.3f}")
+    print(f"dE: {deltae:.3f}")
+    print(f"Tone response: {tone:.3f}")
+    print(f"White balance: {wbalance:.3f}")
+    print(f"Lightness uniformity: {light:.3%}")
+    print(f"Color accuracy: {color_acc:.3f}")
+
+
+def get_tone_wb(tested: dict, reference: dict) -> tuple:
+    """Get tone response for CC as defined in FADGI:
+    Tone response dL2k for any given gray patch.
+    :param tested: Values for patches in tested file
+    :type tested: dict
+    :param reference: Values for patches in reference file
+    :type reference: dict
+    :return: max absolute difference in gray patches in L channel
+             and difference in colors
+    :rtype: Tuple(float, float)
+    """
+    tone_response: list = []
+    white_balance: list = []
+
+    for patch_name in graylist:
+        # test tone response
+        test = tested[patch_name].lab_l
+        ref = reference[patch_name].lab_l
+        tone_response.append(abs(test - ref))
+        # test white balance
+        point_gray = delta_e_cie2000(tested[patch_name],
+                                     reference[patch_name])
+        white_balance.append(point_gray)
+
+    return max(tone_response), max(white_balance)
+
+
+def get_ligthness_uniformity(lab_values: dict, de_values: list) -> float:
+    """ Get lightness uniformity - standard deviation of dE / mean L*
+    :param lab_values: Values of patches
+    :type lab_values: dict
+    :param de_values: dE values for all patches
+    :type de_values: list
+    :return: Ligthness uniformity number
+    :rtype: float
+    """
+    de_standard_deviation = stdev(de_values)
+    l_values = [x.lab_l for x in lab_values.values()]
+    l_mean = sum(l_values) / len(l_values)
+
+    return de_standard_deviation / l_mean
+
+
+def get_color_accuracy(de: float) -> float:
+    """ Get 90th percentile color accuracy: 2.5 average deviation
+    of all patches
+    :param de: average deviation of all patches
+    :type de: float
+    :return: color accuracy
+    :rtype: float
+    """
+    return 2.5 * de
 
 
 def get_patch_value(pname, cc_file: Image):
-    """ Get Lab values from single patch """
+    """ Get Lab values from single patch
+    :param pname: name of patch in range of A1 - F4
+    :type pname: str
+    :param cc_file: Image to analyze
+    :type cc_file: Image
+    :return: analyzed patch name, color values
+    :rtype: str, tuple
+    """
     cc_width, cc_height = cc_file.size
     # Calculate size of square to get color depending on size of
     # checker image bigger is better because we need more precise
     # approximation. Also bigger is more risk to not fit into
     # real square.
-    patch_size = cc_width * 0.8 / 6 / 2 / 2
+    patch_size = round(cc_width * 0.8 / 6 / 2 / 2)
+    patch_size = min(patch_size, 50)
     patch_side = patch_size * 2
-    print(patch_side)
     # Extract middle of the patch
     cc_x = cc_coords[pname][0]
     cc_y = cc_coords[pname][1]
@@ -141,25 +243,50 @@ def get_patch_value(pname, cc_file: Image):
     # Magick command:
     #   extract patch, with size of {patch_side}
     #   resize it to 1x1 to get mean color
-    #   convert to LAB colorspace
     #   and get text for values
-    magic_string = (f"magick -quiet {cc_file.filename}[0] "
+    magic_string = (f"magick -quiet {re.escape(cc_file.filename)}[0] "
                     f"-crop {patch_side}x{patch_side}+{p_x}+{p_y} "
-                     "-resize 1x1 -define quantum:format=floating-point "
-                     "-depth 16 -colorspace LAB txt:")
+                    "-resize 1x1 "
+                    "-colorspace RGB "
+                    "-depth 16 -colorspace sRGB txt:")
     p_text = os.popen(magic_string).read()
-    # Extract LAB channel values from magick string
-    p_lab = re.findall(r"cielaba?\(.*\)", p_text)[0]
-    p_lab = re.sub(r"cielaba?\(", "", p_lab)
-    p_lab = re.sub(r"\)", "", p_lab)
-    print(pname, tuple(p_lab.split(",")[:3]))
-    return pname, tuple(p_lab.split(",")[:3])
+    # Proper way to get appropriate Lab values:
+    # one pixel 0-1 values in RGB and later using colormath python:
+    # Extract RGB values from magick string and convert them to 0-1 scale
+    p_rgb = re.findall(r"0,0: \((.*)\) ", p_text)[0]
+    rgb_full_scale = p_rgb.split(",")[:3]
+    # I am dealing with 16-bit values
+    rgb_r, rgb_g, rgb_b = (float(x) / 65535 for x in rgb_full_scale)
+
+    lab_color = convert_color(sRGBColor(rgb_r, rgb_g, rgb_b), LabColor,
+                              target_illuminant="d50")
+
+    lab_tuple = (lab_color.lab_l, lab_color.lab_a, lab_color.lab_b)
+
+    return pname, lab_tuple
 
 
 if __name__ == '__main__':
 
+    ap = argparse.ArgumentParser(description="Test color data")
+
+    ap.add_argument("testfile", type=str,
+                    help="File to test")
+    ap.add_argument("--color", "-c", required=False, type=str,
+                    help="L*a*b* data in file a la CTAGS")
+    ap.add_argument("--coordinates", "-x", required=False, type=str,
+                    help="""File with coordinates of fields in
+                         percentages of file (must be in tune
+                         with color data)""")
+    ap.add_argument("--half", action="store_true", required=False,
+                    help="""Use only lower half of checker:
+                         BGRYMC, Greys (only CC family supported)""")
+
+    args = ap.parse_args()
+    cc_values = process_color_data(args.color)
+
     try:
-        DELTAEFILE = sys.argv[1]
+        DELTAEFILE = args.testfile
     except IndexError:
         raise SystemExit('usage: cvs file from deltae required')
 
