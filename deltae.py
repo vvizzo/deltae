@@ -6,7 +6,7 @@ import re
 import argparse
 from statistics import stdev
 from PIL import Image
-from colormath.color_objects import LabColor, sRGBColor
+from colormath.color_objects import LabColor, AdobeRGBColor
 from colormath.color_diff import delta_e_cie2000
 from colormath.color_conversions import convert_color
 
@@ -73,6 +73,68 @@ graylist = ("A4", "B4", "C4", "D4", "E4", "F4")
 
 text_extensions = ('.txt', '.csv')
 image_extenstions = ('.png', '.jpg', '.tif')
+
+
+class Patch:
+    """Class to store values related to patch."""
+    def __init__(self,
+                 ll=None, la=None, lb=None,
+                 rr=None, rg=None, rb=None,
+                 px=None, py=None, de=None):
+        self.ll = ll
+        self.la = la
+        self.lb = lb
+        self.rr = rr
+        self.rg = rg
+        self.rb = rb
+        self.px = px
+        self.py = py
+        self.de = de
+
+    @property
+    def x(self):
+        """X coordinate of upper left corner."""
+        return self.px
+
+    @property
+    def y(self):
+        """Y coordinate of upper left corner."""
+        return self.py
+
+    @property
+    def l(self):
+        """L of Lab"""
+        return self.ll
+
+    @property
+    def a(self):
+        """a of Lab"""
+        return self.la
+
+    @property
+    def b(self):
+        """b of Lab"""
+        return self.lb
+
+    @property
+    def rgb_r(self):
+        """R of RGB"""
+        return self.rr
+
+    @property
+    def rgb_g(self):
+        """G of RGB"""
+        return self.rg
+
+    @property
+    def rgb_b(self):
+        """B of RGB"""
+        return self.rb
+
+    @property
+    def d(self):
+        """dE value for patch"""
+        return self.de
 
 
 def process_color_data(data_file) -> dict:
@@ -143,6 +205,9 @@ def calculate_from_image(fname: str):
     for patch in cc_values:
         point = delta_e_cie2000(cc_values[patch],
                                 image_values[patch])
+
+        checker_values[patch].de = point
+
         deglobal.append(point)
 
     # Calculate parameters:
@@ -161,6 +226,40 @@ def calculate_from_image(fname: str):
     print(f"White balance: {wbalance:.3f}")
     print(f"Lightness uniformity: {light:.3%}")
     print(f"Color accuracy: {color_acc:.3f}")
+
+    # Create debug image
+    draw_string = ""
+    debug_file = ""
+    for pn, pv in checker_values.items():
+        # Stuff for magick drawing
+        if pv.d < 4.0:
+            stroke = "green"
+        else:
+            stroke = "red"
+        draw_string += (f"-fill None -stroke {stroke} -strokewidth 2 "
+                        f"-draw "
+                        f"'rectangle {pv.x},{pv.y} {pv.x+100},{pv.y+100}' ")
+        # Stuff for debug file
+        debug_file += (f"{pn}: Lab - {pv.l:.3f}, {pv.a:.3f}, {pv.b:.3f}, "
+                       f"\tRGB - {pv.rgb_r * 256:.2f}, {pv.rgb_g * 256:.2f}, "
+                       f"{pv.rgb_b * 256:.2f}, "
+                       f"\td2k - {pv.d:.3f}\n")
+
+    magick_debug_string = (f"magick -quiet {re.escape(DELTAEFILE)}[0] "
+                           f"{draw_string} "
+                           f"{re.escape(DELTAEFILE)}_de.jpg")
+
+    os.system(magick_debug_string)
+    # Create debug file
+    debug_file += (f"\n"
+                   f"dE: {deltae:.3f}\n"
+                   f"Tone response: {tone:.3f}\n"
+                   f"White balance: {wbalance:.3f}\n"
+                   f"Lightness uniformity: {light:.3%}\n"
+                   f"Color accuracy: {color_acc:.3f}")
+
+    with open("out.txt", "w", encoding="utf-8") as f:
+        f.write(debug_file)
 
 
 def get_tone_wb(tested: dict, reference: dict) -> tuple:
@@ -223,7 +322,7 @@ def get_patch_value(pname, cc_file: Image):
     :type pname: str
     :param cc_file: Image to analyze
     :type cc_file: Image
-    :return: analyzed patch name, color values
+    :return: analyzed patch name, color values, coords (upper-left)
     :rtype: str, tuple
     """
     cc_width, cc_height = cc_file.size
@@ -256,12 +355,16 @@ def get_patch_value(pname, cc_file: Image):
     p_rgb = re.findall(r"0,0: \((.*)\) ", p_text)[0]
     rgb_full_scale = p_rgb.split(",")[:3]
     # I am dealing with 16-bit values
-    rgb_r, rgb_g, rgb_b = (float(x) / 65535 for x in rgb_full_scale)
+    rgb_r, rgb_g, rgb_b = (float(x) / 65536 for x in rgb_full_scale)
 
-    lab_color = convert_color(sRGBColor(rgb_r, rgb_g, rgb_b), LabColor,
+    lab_color = convert_color(AdobeRGBColor(rgb_r, rgb_g, rgb_b), LabColor,
                               target_illuminant="d50")
 
     lab_tuple = (lab_color.lab_l, lab_color.lab_a, lab_color.lab_b)
+
+    checker_values[pname] = Patch(*lab_tuple,
+                                  rgb_r, rgb_g, rgb_b,
+                                  p_x, p_y)
 
     return pname, lab_tuple
 
@@ -284,6 +387,9 @@ if __name__ == '__main__':
 
     args = ap.parse_args()
     cc_values = process_color_data(args.color)
+
+    # All values for checker go here
+    checker_values: dict = {}
 
     try:
         DELTAEFILE = args.testfile
