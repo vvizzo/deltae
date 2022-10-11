@@ -20,7 +20,21 @@ errors accumulate and in images in difficult lightning conditions final dE diffe
 ### Text files
 
 ```
-deltae.py values.csv
+usage: deltae.py [-h] [--color COLOR] [--coordinates COORDINATES] [--half] testfile
+
+Test color data
+
+positional arguments:
+  testfile              File to test
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --color COLOR, -c COLOR
+                        L*a*b* data in file a la CTAGS
+  --coordinates COORDINATES, -x COORDINATES [not implemented yet]
+                        File with coordinates of fields in percentages of file (must be in tune with color data)
+  --half                Use only lower half of checker: BGRYMC, Greys (only CC family supported)
+
 ```
   
 Program recognizes csv and txt as text files. Expects file in format used by d.p.c.: first 4 lines set-up (ignored by program),
