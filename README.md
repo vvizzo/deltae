@@ -16,11 +16,8 @@ and in deltae.py script patches have very similar values. Values I got from d.p.
 errors accumulate and in images in difficult lightning conditions final dE differs up to 4 between d.p.c and deltae.py.
 
 ## Usage
-
-### Text files
-
 ```
-usage: deltae.py [-h] [--color COLOR] [--coordinates COORDINATES] [--half] testfile
+usage: deltae.py [-h] [--color COLOR] [--coordinates COORDINATES] [--checker [{cc24,half}]] testfile
 
 Test color data
 
@@ -31,11 +28,16 @@ optional arguments:
   -h, --help            show this help message and exit
   --color COLOR, -c COLOR
                         L*a*b* data in file a la CTAGS
-  --coordinates COORDINATES, -x COORDINATES [not implemented yet]
+  --coordinates COORDINATES, -x COORDINATES
                         File with coordinates of fields in percentages of file (must be in tune with color data)
-  --half                Use only lower half of checker: BGRYMC, Greys (only CC family supported)
+  --checker [{cc24,half}]
+                        Name of checker: supported ATM cc24 classic and mini, lower half of them (grays and BGRYMC.
+                        Default is cc24.
 
 ```
+
+### Text files
+
   
 Program recognizes csv and txt as text files. Expects file in format used by d.p.c.: first 4 lines set-up (ignored by program),
 CSV header with 7 fields and later patch fields:
@@ -57,6 +59,6 @@ deltae.py image.jpg
 ```
 Program recognizes JPG, TIFF, PNG files. To prepare image for analysis user must have:
 
-1. Crop down to corner white marks in colorchecker.
+1. Crop down to corner white marks in colorchecker. In case of half of checker use + as mark for top border.
 2. Rotate so grey row is at the bottom of file.
 
