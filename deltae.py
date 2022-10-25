@@ -11,66 +11,6 @@ from colormath.color_diff import delta_e_cie2000
 from colormath.color_conversions import convert_color
 
 
-# Coordinates of middle of color square.
-# Values in percents of whole dimension - based on
-# mini cc cropped to corner markings
-cc_coords = {'A1': (9.94, 14.33),
-             'A2': (9.94, 38.89),
-             'A3': (9.94, 62.44),
-             'A4': (9.94, 86.49),
-             'B1': (26.05, 14.33),
-             'B2': (26.05, 38.89),
-             'B3': (26.05, 62.44),
-             'B4': (26.05, 86.49),
-             'C1': (41.81, 14.33),
-             'C2': (41.81, 38.89),
-             'C3': (41.81, 62.44),
-             'C4': (41.81, 86.49),
-             'D1': (57.92, 14.33),
-             'D2': (57.92, 38.89),
-             'D3': (57.92, 62.44),
-             'D4': (57.92, 86.49),
-             'E1': (74.02, 14.33),
-             'E2': (74.02, 38.89),
-             'E3': (74.02, 62.44),
-             'E4': (74.02, 86.49),
-             'F1': (90.47, 14.33),
-             'F2': (90.47, 38.89),
-             'F3': (90.47, 62.44),
-             'F4': (90.47, 86.49),
-             }
-
-# Official x-rite Lab values for Colorchecker after Nov 2014
-cc_after2014 = {'A1': LabColor(37.54, 14.37, 14.92),
-                'A2': LabColor(62.73, 35.83, 56.5),
-                'A3': LabColor(28.37, 15.42, -49.8),
-                'A4': LabColor(95.19, -1.03, 2.93),
-                'B1': LabColor(64.66, 19.27, 17.5),
-                'B2': LabColor(39.43, 10.75, -45.17),
-                'B3': LabColor(54.38, -39.72, 32.27),
-                'B4': LabColor(81.29, -0.57, 0.44),
-                'C1': LabColor(49.32, -3.82, -22.54),
-                'C2': LabColor(50.57, 48.64, 16.67),
-                'C3': LabColor(42.43, 51.05, 28.62),
-                'C4': LabColor(66.89, -0.75, -0.06),
-                'D1': LabColor(43.46, -12.74, 22.72),
-                'D2': LabColor(30.1, 22.54, -20.87),
-                'D3': LabColor(81.8, 2.67, 80.41),
-                'D4': LabColor(50.76, -0.13, 0.14),
-                'E1': LabColor(54.94, 9.61, -24.79),
-                'E2': LabColor(71.77, -24.13, 58.19),
-                'E3': LabColor(50.63, 51.28, -14.12),
-                'E4': LabColor(35.63, -0.46, -0.48),
-                'F1': LabColor(70.48, -32.26, -0.37),
-                'F2': LabColor(71.51, 18.24, 67.37),
-                'F3': LabColor(49.57, -29.71, -28.32),
-                'F4': LabColor(20.64, 0.07, -0.46)}
-
-halflist = ("A3", "A4", "B3", "B4", "C3", "C4",
-            "D3", "D4", "E3", "E4", "F3", "F4")
-
-graylist = ("A4", "B4", "C4", "D4", "E4", "F4")
-
 text_extensions = ('.txt', '.csv')
 image_extenstions = ('.png', '.jpg', '.tif')
 
@@ -137,6 +77,105 @@ class Patch:
         return self.de
 
 
+# Coordinates of middle of color square.
+# Values in percents of whole dimension - based on
+# mini cc cropped to corner markings
+def load_checker_data(checker_name="cc24") -> tuple:
+    """Load checker data
+    :param checker_name: name of checker to get data for
+    :type checker_name: str
+    :return: return data related to checker: color and patch coords
+    :rtype: tuple
+
+    Should be class?
+    """
+    checker_data = {"cc24":
+                    {"colors": {'A1': (9.94, 14.33),
+                                'A2': (9.94, 38.89),
+                                'A3': (9.94, 62.44),
+                                'A4': (9.94, 86.49),
+                                'B1': (26.05, 14.33),
+                                'B2': (26.05, 38.89),
+                                'B3': (26.05, 62.44),
+                                'B4': (26.05, 86.49),
+                                'C1': (41.81, 14.33),
+                                'C2': (41.81, 38.89),
+                                'C3': (41.81, 62.44),
+                                'C4': (41.81, 86.49),
+                                'D1': (57.92, 14.33),
+                                'D2': (57.92, 38.89),
+                                'D3': (57.92, 62.44),
+                                'D4': (57.92, 86.49),
+                                'E1': (74.02, 14.33),
+                                'E2': (74.02, 38.89),
+                                'E3': (74.02, 62.44),
+                                'E4': (74.02, 86.49),
+                                'F1': (90.47, 14.33),
+                                'F2': (90.47, 38.89),
+                                'F3': (90.47, 62.44),
+                                'F4': (90.47, 86.49)},
+                     "coords": {'A1': LabColor(37.54, 14.37, 14.92),
+                                'A2': LabColor(62.73, 35.83, 56.5),
+                                'A3': LabColor(28.37, 15.42, -49.8),
+                                'A4': LabColor(95.19, -1.03, 2.93),
+                                'B1': LabColor(64.66, 19.27, 17.5),
+                                'B2': LabColor(39.43, 10.75, -45.17),
+                                'B3': LabColor(54.38, -39.72, 32.27),
+                                'B4': LabColor(81.29, -0.57, 0.44),
+                                'C1': LabColor(49.32, -3.82, -22.54),
+                                'C2': LabColor(50.57, 48.64, 16.67),
+                                'C3': LabColor(42.43, 51.05, 28.62),
+                                'C4': LabColor(66.89, -0.75, -0.06),
+                                'D1': LabColor(43.46, -12.74, 22.72),
+                                'D2': LabColor(30.1, 22.54, -20.87),
+                                'D3': LabColor(81.8, 2.67, 80.41),
+                                'D4': LabColor(50.76, -0.13, 0.14),
+                                'E1': LabColor(54.94, 9.61, -24.79),
+                                'E2': LabColor(71.77, -24.13, 58.19),
+                                'E3': LabColor(50.63, 51.28, -14.12),
+                                'E4': LabColor(35.63, -0.46, -0.48),
+                                'F1': LabColor(70.48, -32.26, -0.37),
+                                'F2': LabColor(71.51, 18.24, 67.37),
+                                'F3': LabColor(49.57, -29.71, -28.32),
+                                'F4': LabColor(20.64, 0.07, -0.46)},
+                    "graylist": ("A4", "B4", "C4", "D4", "E4", "F4")
+                    },
+                    "half":
+                    {"colors": {'A3': (9.94, 25.00),
+                                'A4': (9.94, 75.00),
+                                'B3': (26.05, 25.00),
+                                'B4': (26.05, 75.00),
+                                'C3': (41.81, 25.00),
+                                'C4': (41.81, 75.00),
+                                'D3': (57.92, 25.00),
+                                'D4': (57.92, 75.00),
+                                'E3': (74.02, 25.00),
+                                'E4': (74.02, 75.00),
+                                'F3': (90.47, 25.00),
+                                'F4': (90.47, 75.00)},
+                    "coords": {'A3': LabColor(28.37, 15.42, -49.8),
+                                'A4': LabColor(95.19, -1.03, 2.93),
+                                'B3': LabColor(54.38, -39.72, 32.27),
+                                'B4': LabColor(81.29, -0.57, 0.44),
+                                'C3': LabColor(42.43, 51.05, 28.62),
+                                'C4': LabColor(66.89, -0.75, -0.06),
+                                'D3': LabColor(81.8, 2.67, 80.41),
+                                'D4': LabColor(50.76, -0.13, 0.14),
+                                'E3': LabColor(50.63, 51.28, -14.12),
+                                'E4': LabColor(35.63, -0.46, -0.48),
+                                'F3': LabColor(49.57, -29.71, -28.32),
+                                'F4': LabColor(20.64, 0.07, -0.46)},
+                    "graylist": ("A4", "B4", "C4", "D4", "E4", "F4")
+                    }
+    }
+
+    check_colors = checker_data[checker_name]["colors"]
+    check_coords = checker_data[checker_name]["coords"]
+    check_gray = checker_data[checker_name]["graylist"]
+
+    return check_colors, check_coords, check_gray
+
+
 def process_color_data(data_file) -> dict:
     """Create dict with fields and values in Lab
     :param data_file: name of file with data, no validation though
@@ -153,7 +192,7 @@ def process_color_data(data_file) -> dict:
                 cc_vals[field] = LabColor(Lab_L, Lab_a, Lab_b)
     except TypeError:
         # When file not given use official values from x-rite
-        cc_vals = cc_after2014.copy()
+        cc_vals = cc_colors.copy()
 
     return cc_vals
 
@@ -169,9 +208,6 @@ def calculate_from_text(fname: str):
             patches = f.readlines()[5:29]
     except IndexError:
         raise SystemExit("something wrong with file, didn't get 24 patches.")
-
-    if args.half:
-        patches = [x for x in patches if x.startswith(halflist)]
 
     deglobal = []
     for line in patches:
@@ -276,7 +312,7 @@ def get_tone_wb(tested: dict, reference: dict) -> tuple:
     tone_response: list = []
     white_balance: list = []
 
-    for patch_name in graylist:
+    for patch_name in cc_graylist:
         # test tone response
         test = tested[patch_name].lab_l
         ref = reference[patch_name].lab_l
@@ -381,15 +417,22 @@ if __name__ == '__main__':
                     help="""File with coordinates of fields in
                          percentages of file (must be in tune
                          with color data)""")
-    ap.add_argument("--half", action="store_true", required=False,
-                    help="""Use only lower half of checker:
-                         BGRYMC, Greys (only CC family supported)""")
+    ap.add_argument("--checker",
+                    nargs="?", default="cc24", choices=["cc24", "half"],
+                    help="""Name of checker: supported ATM cc24 classic and
+                         mini, lower half of them (grays and BGRYMC.
+                         Default is cc24.""")
 
     args = ap.parse_args()
-    cc_values = process_color_data(args.color)
 
     # All values for checker go here
     checker_values: dict = {}
+
+    # Get data for particular color checker
+    cc_coords, cc_colors, cc_graylist = load_checker_data(args.checker)
+
+    # Fill color data
+    cc_values = process_color_data(args.color)
 
     try:
         DELTAEFILE = args.testfile
