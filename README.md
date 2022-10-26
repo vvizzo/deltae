@@ -17,7 +17,7 @@ errors accumulate and in images in difficult lightning conditions final dE diffe
 
 ## Usage
 ```
-usage: deltae.py [-h] [--color COLOR] [--coordinates COORDINATES] [--checker [{cc24,half}]] testfile
+usage: deltae.py [-h] [--checker [{cc24,halfcc,nanocc,gt20,gt10,gt05}]] [--color COLOR] [--coordinates COORDINATES] testfile
 
 Test color data
 
@@ -26,14 +26,11 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  --color COLOR, -c COLOR
-                        L*a*b* data in file a la CTAGS
+  --checker [{cc24,halfcc,nanocc,gt20,gt10,gt05}], -c [{cc24,halfcc,nanocc,gt20,gt10,gt05}]
+                        Name of checker: supported ATM cc24 classic and mini, lower half of them (grays and BGRYMC. Default is cc24.
+  --color COLOR         L*a*b* data in file a la CTAGS
   --coordinates COORDINATES, -x COORDINATES
                         File with coordinates of fields in percentages of file (must be in tune with color data)
-  --checker [{cc24,half}]
-                        Name of checker: supported ATM cc24 classic and mini, lower half of them (grays and BGRYMC.
-                        Default is cc24.
-
 ```
 
 ### Text files
