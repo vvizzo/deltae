@@ -590,7 +590,7 @@ def calculate_from_image(fname: str):
                    f"Lightness uniformity: {light:.3%}\n"
                    f"Color accuracy: {color_acc:.3f}")
 
-    with open("out.txt", "w", encoding="utf-8") as f:
+    with open(f"{fname}.txt", "w", encoding="utf-8") as f:
         f.write(debug_file)
 
 
