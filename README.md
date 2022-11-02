@@ -17,7 +17,9 @@ errors accumulate and in images in difficult lightning conditions final dE diffe
 
 ## Usage
 ```
-usage: deltae.py [-h] [--checker [{cc24,halfcc,nanocc,gt20,gt10,gt05}]] [--color COLOR] [--coordinates COORDINATES] testfile
+usage: deltae.py [-h] [--checker [{cc24,halfcc,nanocc,halfnanocc,gtdl,gt20,gt10,gt05}]] [--color COLOR]
+                 [--coordinates COORDINATES]
+                 testfile
 
 Test color data
 
@@ -26,8 +28,9 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  --checker [{cc24,halfcc,nanocc,gt20,gt10,gt05}], -c [{cc24,halfcc,nanocc,gt20,gt10,gt05}]
-                        Name of checker: supported ATM cc24 classic and mini, lower half of them (grays and BGRYMC. Default is cc24.
+  --checker [{cc24,halfcc,nanocc,halfnanocc,gtdl,gt20,gt10,gt05}], -c [{cc24,halfcc,nanocc,halfnanocc,gtdl,gt20,gt10,gt05}]
+                        Name of checker: supported ATM cc24 classic and mini, lower half of them (grays and BGRYMC.
+                        Default is cc24.
   --color COLOR         L*a*b* data in file a la CTAGS
   --coordinates COORDINATES, -x COORDINATES
                         File with coordinates of fields in percentages of file (must be in tune with color data)
@@ -52,10 +55,27 @@ Now program doesn't do format checking so it will exit immediately.
 
 ### Image files
 ```
-deltae.py image.jpg
+deltae.py [image]
 ```
-Program recognizes JPG, TIFF, PNG files. To prepare image for analysis user must have:
+Program recognizes JPG, TIFF, PNG files. By default `deltae.py` verifies against cc24 geometry and values.
 
-1. Crop down to corner white marks in colorchecker. In case of half of checker use + as mark for top border.
-2. Rotate so grey row is at the bottom of file.
+Supported checkers are:
+
+- ColorChecker Classic and Mini (+ half, with only 2 rows - greys and BGRYCM)
+- ColorChecker Nano (+ half, with only 2 rows - greys and BGRYCM)
+- GoldenThread Object Level Big (2.0)
+- GoldenThread Object Level Regular (1.0)
+- GoldenThread Object Level Mini (0.5)
+- GoldenThread Device Level
+
+To prepare image for analysis user must have:
+
+1. Rotate so grey row is at the bottom of file.
+
+2. Crop down files quite precisely:
+
+   - ColorCheckers Classic and Mini: down to crop marks in the corners
+   - in case of half versions cut at the + in the middle
+   - GoldenThread Big (gt20) and Regular (gt10) crop along outside of yellow border
+   - GoldenThread Mini (gt05) and GoldenThread DeviceLevel (gtdl) crop down to black border
 
