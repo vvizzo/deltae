@@ -76,6 +76,8 @@ To prepare image for analysis user must have:
 
    - ColorCheckers Classic and Mini: down to crop marks in the corners
    - in case of half versions cut at the + in the middle
+   - ColorChecker Nano: crop along physical edges of checker
+   - in case of half version cut down along patches with minimal border
    - GoldenThread Big (gt20) and Regular (gt10) crop along outside of yellow border
    - GoldenThread Mini (gt05) and GoldenThread DeviceLevel (gtdl) crop down to black border
 
