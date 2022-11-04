@@ -181,6 +181,98 @@ checker_data = {"cc24":
                  "graylist": ("A4", "B4", "C4", "D4", "E4", "F4"),
                  "patch_fraction": 0.07
                  },
+                "halfnanocc":
+                {"coords": {"A3": (13.8, 24.0),
+                            "A4": (13.8, 74.0),
+                            "B3": (28.5, 24.0),
+                            "B4": (28.5, 74.0),
+                            "C3": (43.0, 24.0),
+                            "C4": (43.0, 74.0),
+                            "D3": (57.7, 24.0),
+                            "D4": (57.7, 74.0),
+                            "E3": (72.3, 24.0),
+                            "E4": (72.3, 74.0),
+                            "F3": (86.8, 24.0),
+                            "F4": (86.8, 74.0)},
+                 "colors": {"A3": LabColor(28.37, 15.42, -49.8),
+                            "A4": LabColor(95.19, -1.03, 2.93),
+                            "B3": LabColor(54.38, -39.72, 32.27),
+                            "B4": LabColor(81.29, -0.57, 0.44),
+                            "C3": LabColor(42.43, 51.05, 28.62),
+                            "C4": LabColor(66.89, -0.75, -0.06),
+                            "D3": LabColor(81.8, 2.67, 80.41),
+                            "D4": LabColor(50.76, -0.13, 0.14),
+                            "E3": LabColor(50.63, 51.28, -14.12),
+                            "E4": LabColor(35.63, -0.46, -0.48),
+                            "F3": LabColor(49.57, -29.71, -28.32),
+                            "F4": LabColor(20.64, 0.07, -0.46)},
+                 "graylist": ("A4", "B4", "C4", "D4", "E4", "F4"),
+                 "patch_fraction": 0.07
+                 },
+                "gtdl":
+                {"coords": {"A01": (33.6, 25.00),
+                            "A02": (38.0, 25.00),
+                            "A03": (42.2, 25.00),
+                            "A04": (46.2, 25.00),
+                            "A05": (50.5, 25.00),
+                            "A06": (54.6, 25.00),
+                            "A07": (58.7, 25.00),
+                            "A08": (63.0, 25.00),
+                            "A09": (66.8, 25.00),
+                            "A10": (39.9, 32.1),
+                            "A11": (44.0, 32.1),
+                            "A12": (48.1, 32.1),
+                            "A13": (52.2, 32.1),
+                            "A14": (56.4, 32.1),
+                            "A15": (60.5, 32.1),
+                            "A16": (39.9, 63.9),
+                            "A17": (44.0, 63.9),
+                            "A18": (48.1, 63.9),
+                            "A19": (52.2, 63.9),
+                            "A20": (56.4, 63.9),
+                            "A21": (60.5, 63.9),
+                            "A22": (33.6, 71.2),
+                            "A23": (38.0, 71.2),
+                            "A24": (42.2, 71.2),
+                            "A25": (46.2, 71.2),
+                            "A26": (50.5, 71.2),
+                            "A27": (54.6, 71.2),
+                            "A28": (58.7, 71.2),
+                            "A29": (63.0, 71.2),
+                            "A30": (66.8, 71.2)},
+                 "colors": {"A01": LabColor(39.12, 13.24, 15.07),
+                            "A02": LabColor(65.43, 18.11, 18.72),
+                            "A03": LabColor(49.87, -4.34, -22.29),
+                            "A04": LabColor(44.26, -13.80, 22.85),
+                            "A05": LabColor(55.56, 9.82, -24.49),
+                            "A06": LabColor(70.82, -33.43, -0.35),
+                            "A07": LabColor(63.51, 34.26, 59.60),
+                            "A08": LabColor(39.92, 11.81, -46.07),
+                            "A09": LabColor(52.24, 48.55, 18.51),
+                            "A10": LabColor(97.06, -0.40, 1.13),
+                            "A11": LabColor(92.02, -0.60, 0.23),
+                            "A12": LabColor(83.34, -0.75, 0.21),
+                            "A13": LabColor(82.14, -1.06, 0.43),
+                            "A14": LabColor(72.06, -1.19, 0.28),
+                            "A15": LabColor(62.15, -1.07, 0.19),
+                            "A16": LabColor(49.25, -0.16, 0.01),
+                            "A17": LabColor(38.62, -0.18, -0.04),
+                            "A18": LabColor(28.86, 0.54, 0.60),
+                            "A19": LabColor(16.19, -0.05, 0.73),
+                            "A20": LabColor(8.29, -0.81, 0.19),
+                            "A21": LabColor(3.44, -0.23, 0.49),
+                            "A22": LabColor(31.41, 20.98, -19.43),
+                            "A23": LabColor(72.46, -24.45, 55.93),
+                            "A24": LabColor(72.95, 16.83, 68.80),
+                            "A25": LabColor(29.37, 13.06, -49.49),
+                            "A26": LabColor(54.91, -38.91, 30.77),
+                            "A27": LabColor(43.96, 52.00, 30.01),
+                            "A28": LabColor(82.74, 3.45, 81.29),
+                            "A29": LabColor(52.79, 50.88, -12.72),
+                            "A30": LabColor(50.87, -27.17, -29.46)},
+                 "graylist": gt_obj_lev_graylist,
+                 "patch_fraction": 0.026
+                 },
                 "gt20":
                 {"coords": {'A01': (5.00, 39.7),
                             'A02': (7.8, 39.7),
@@ -578,6 +670,7 @@ def calculate_from_image(fname: str):
                        f"\td2k - {pv.d:.3f}\n")
 
     magick_debug_string = (f"magick -quiet {re.escape(DELTAEFILE)}[0] "
+                           f"-rotate {cc_rotation} "
                            f"{draw_string} "
                            f"{re.escape(DELTAEFILE)}_de.jpg")
 
@@ -658,6 +751,12 @@ def get_patch_value(pname, cc_file: Image):
     :rtype: str, tuple
     """
     cc_width, cc_height = cc_file.size
+
+    # We have to 'rotate' values to get proper patch positions for
+    # W (270), E (90) positions
+    if cc_rotation in (270, 90):
+        cc_height, cc_width = cc_width, cc_height
+
     # Calculate size of square to get color depending on size of
     # checker image bigger is better because we need more precise
     # approximation. Also bigger is more risk to not fit into
@@ -676,6 +775,7 @@ def get_patch_value(pname, cc_file: Image):
     #   resize it to 1x1 to get mean color
     #   and get text for values
     magic_string = (f"magick -quiet {re.escape(cc_file.filename)}[0] "
+                    f"-rotate {cc_rotation} "
                     f"-crop {patch_side}x{patch_side}+{p_x}+{p_y} "
                     "-resize 1x1 "
                     "-colorspace RGB "
@@ -713,6 +813,15 @@ if __name__ == '__main__':
                     help="""Name of checker: supported ATM cc24 classic and
                          mini, lower half of them (grays and BGRYMC.
                          Default is cc24.""")
+    ap.add_argument("--orientation", "-o",
+                    nargs="?", default="S", choices=['S', 'W', 'N', 'E'],
+                    help="""Orientation of checker:
+                         possible values are S, W, N, E (default S)
+                         S - in case of CC family greys are at the bottom,
+                             in case of GT you can read text normally,
+                         W - greys are on the left,
+                         N - greys are on the top,
+                         E - greys are on the left""")
     ap.add_argument("--color", required=False, type=str,
                     help="L*a*b* data in file a la CTAGS")
     ap.add_argument("--coordinates", "-x", required=False, type=str,
@@ -725,8 +834,16 @@ if __name__ == '__main__':
     # All values for checker go here
     checker_values: dict = {}
 
+    # Rotate checker to make sure we have it in proper orientation
+    # With S - everythin is OK, with W bottom is on the left and we have
+    # to rotate it 270 degrees, with N bottom is on top, etc.
+    cc_rotation_values = {'S': 0, 'W': 270, 'N': 180, 'E': 90}
+    cc_rotation = cc_rotation_values[args.orientation]
+
     # Get data for particular color checker
     cc_colors, cc_coords, cc_graylist, cc_ps = load_checker_data(args.checker)
+    cc_name = args.checker
+
 
     # Fill color data
     cc_values = process_color_data(args.color)
