@@ -17,8 +17,8 @@ errors accumulate and in images in difficult lightning conditions final dE diffe
 
 ## Usage
 ```
-usage: deltae.py [-h] [--checker [{cc24,halfcc,nanocc,halfnanocc,gtdl,gt20,gt10,gt05}]] [--color COLOR]
-                 [--coordinates COORDINATES]
+usage: deltae.py [-h] [--checker [{cc24,halfcc,nanocc,halfnanocc,gtdl,gt20,gt10,gt05}]] [--orientation [{S,W,N,E}]]
+                 [--color COLOR] [--coordinates COORDINATES]
                  testfile
 
 Test color data
@@ -31,6 +31,10 @@ optional arguments:
   --checker [{cc24,halfcc,nanocc,halfnanocc,gtdl,gt20,gt10,gt05}], -c [{cc24,halfcc,nanocc,halfnanocc,gtdl,gt20,gt10,gt05}]
                         Name of checker: supported ATM cc24 classic and mini, lower half of them (grays and BGRYMC.
                         Default is cc24.
+  --orientation [{S,W,N,E}], -o [{S,W,N,E}]
+                        Orientation of checker: possible values are S, W, N, E (default S) S - in case of CC family
+                        greys are at the bottom, in case of GT you can read text normally, W - greys are on the
+                        left, N - greys are on the top, E - greys are on the left
   --color COLOR         L*a*b* data in file a la CTAGS
   --coordinates COORDINATES, -x COORDINATES
                         File with coordinates of fields in percentages of file (must be in tune with color data)
