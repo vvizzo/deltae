@@ -29,7 +29,8 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   --checker [{cc24,halfcc,nanocc,halfnanocc,gtdl,gt20,gt10,gt05}], -c [{cc24,halfcc,nanocc,halfnanocc,gtdl,gt20,gt10,gt05}]
-                        Name of checker: supported ATM cc24 classic and mini, lower half of them (grays and BGRYMC.
+                        Name of checker - supported: cc24 classic, mini, nano, lower half of them (grays and BGRYMC).
+                        GoldenThread: Device Level, Object Level, Big (2.0), Normal (1.0), Mini (0.5).
                         Default is cc24.
   --orientation [{S,W,N,E}], -o [{S,W,N,E}]
                         Orientation of checker: possible values are S, W, N, E (default S) S - in case of CC family
