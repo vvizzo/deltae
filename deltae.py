@@ -810,9 +810,15 @@ if __name__ == '__main__':
                     help="File to test")
     ap.add_argument("--checker", "-c",
                     nargs="?", default="cc24", choices=[*checker_data.keys()],
-                    help="""Name of checker: supported ATM cc24 classic and
-                         mini, lower half of them (grays and BGRYMC.
-                         Default is cc24.""")
+                    help="""Name of checker, supported values:
+                         - c24 (classic and mini) - default,
+                         - halfcc (lower half of them - grays and BGRYMC),
+                         - nanocc (nano version of classic CC),
+                         - halfnanocc (lower half - grays and BGRYMC),
+                         - gtdl (GoldenThread Device Level),
+                         - gt20 (GoldenThread Big),
+                         - gt10 (GoldenThread Regular),
+                         - gt05 (GoldenThread Small)""")
     ap.add_argument("--orientation", "-o",
                     nargs="?", default="S", choices=['S', 'W', 'N', 'E'],
                     help="""Orientation of checker:
@@ -843,7 +849,6 @@ if __name__ == '__main__':
     # Get data for particular color checker
     cc_colors, cc_coords, cc_graylist, cc_ps = load_checker_data(args.checker)
     cc_name = args.checker
-
 
     # Fill color data
     cc_values = process_color_data(args.color)
