@@ -648,6 +648,12 @@ def calculate_from_image(fname: str):
     print(f"White balance: {wbalance:.3f}")
     print(f"Lightness uniformity: {light:.3%}")
     print(f"Color accuracy: {color_acc:.3f}")
+    print("Reference values FADGI, 2016: Prints and photographs\n"
+          "\tdE: 4* <= 2, 3* <= 4\n"
+          "\tTr: 4* <= 2, 3* <= 4\n"
+          "\tWb: 4* <= 2, 3* <= 4\n"
+          "\tLu: 4* <= 1, 3* <= 3\n"
+          "\tCa: 4* < 2, 3* < 4 \n")
 
     # Create debug image
     draw_string = ""
@@ -682,6 +688,12 @@ def calculate_from_image(fname: str):
                    f"White balance: {wbalance:.3f}\n"
                    f"Lightness uniformity: {light:.3%}\n"
                    f"Color accuracy: {color_acc:.3f}")
+    debug_file += ("Reference values FADGI, 2016: Prints and photographs\n"
+                   "\tdE: 4* <= 2, 3* <= 4\n"
+                   "\tTr: 4* <= 2, 3* <= 4\n"
+                   "\tWb: 4* <= 2, 3* <= 4\n"
+                   "\tLu: 4* <= 1, 3* <= 3\n"
+                   "\tCa: 4* < 2, 3* < 4 \n")
 
     with open(f"{fname}.txt", "w", encoding="utf-8") as f:
         f.write(debug_file)
