@@ -643,17 +643,20 @@ def calculate_from_image(fname: str):
     color_acc = get_color_accuracy(deltae)
 
     # Limit to 3 numbers after point, don't need 15
-    print(f"dE: {deltae:.3f}")
-    print(f"Tone response: {tone:.3f}")
-    print(f"White balance: {wbalance:.3f}")
-    print(f"Lightness uniformity: {light:.3%}")
-    print(f"Color accuracy: {color_acc:.3f}")
-    print("Reference values FADGI, 2016: Prints and photographs\n"
-          "\tdE: 4* <= 2, 3* <= 4\n"
-          "\tTr: 4* <= 2, 3* <= 4\n"
-          "\tWb: 4* <= 2, 3* <= 4\n"
-          "\tLu: 4* <= 1, 3* <= 3\n"
-          "\tCa: 4* < 2, 3* < 4 \n")
+    term_string = (f"dE: {deltae:.3f}\n"
+                   f"Tone response: {tone:.3f}\n"
+                   f"White balance: {wbalance:.3f}\n"
+                   f"Lightness uniformity: {light:.3%}\n"
+                   f"Color accuracy: {color_acc:.3f}\n"
+                    "Reference values FADGI, 2016: Prints and photographs\n"
+                    "\tdE: 4* <= 2, 3* <= 4\n"
+                    "\tTr: 4* <= 2, 3* <= 4\n"
+                    "\tWb: 4* <= 2, 3* <= 4\n"
+                    "\tLu: 4* <= 1, 3* <= 3\n"
+                    "\tCa: 4* < 2, 3* < 4 \n"
+                    )
+
+    print(term_string)
 
     # Create debug image
     draw_string = ""
@@ -665,15 +668,42 @@ def calculate_from_image(fname: str):
         else:
             stroke = "red"
         psize = checker_values[patch].size
+        # pointsize parametric or rescale everything for same size
         draw_string += (f"-fill None -stroke {stroke} -strokewidth 2 "
                         f"-draw "
                         f"'rectangle {pv.x},{pv.y} "
-                        f"{pv.x+psize},{pv.y+psize}' ")
+                        f"{pv.x+psize},{pv.y+psize}' "
+                        f"-font Helvetica -pointsize 30 "
+                        f"-fill white -stroke black -strokewidth 1 "
+                        f"-draw "
+                        f"'text {pv.x},{pv.y+psize+30} \"{pv.d:.2f}\"' "
+                        )
         # Stuff for debug file
         debug_file += (f"{pn}: Lab - {pv.l:.3f}, {pv.a:.3f}, {pv.b:.3f}, "
                        f"\tRGB - {pv.rgb_r * 256:.2f}, {pv.rgb_g * 256:.2f}, "
                        f"{pv.rgb_b * 256:.2f}, "
-                       f"\td2k - {pv.d:.3f}\n")
+                       f"\tdE2k - {pv.d:.3f}\n")
+
+    # Create debug file
+    debug_file += (f"\n"
+                   f"dE: {deltae:.3f}\n"
+                   f"Tone response: {tone:.3f}\n"
+                   f"White balance: {wbalance:.3f}\n"
+                   f"Lightness uniformity: {light:.3%}\n"
+                   f"Color accuracy: {color_acc:.3f}\n")
+    debug_file += ("Reference values FADGI, 2016: Prints and photographs\n"
+                   "\tdE: 4* <= 2, 3* <= 4\n"
+                   "\tTr: 4* <= 2, 3* <= 4\n"
+                   "\tWb: 4* <= 2, 3* <= 4\n"
+                   "\tLu: 4* <= 1, 3* <= 3\n"
+                   "\tCa: 4* < 2, 3* < 4 \n")
+
+    term_string += ("\ndeltae.py, Mikołaj Machowski 2024")
+    draw_string += (f"-background white "
+                    f"-fill black "
+                    f"-font Helvetica -pointsize 30 "
+                    f"label:'{term_string}' -append "
+                    )
 
     magick_debug_string = (f"magick -quiet {re.escape(DELTAEFILE)}[0] "
                            f"-rotate {cc_rotation} "
@@ -681,19 +711,6 @@ def calculate_from_image(fname: str):
                            f"{re.escape(DELTAEFILE)}_de.jpg")
 
     os.system(magick_debug_string)
-    # Create debug file
-    debug_file += (f"\n"
-                   f"dE: {deltae:.3f}\n"
-                   f"Tone response: {tone:.3f}\n"
-                   f"White balance: {wbalance:.3f}\n"
-                   f"Lightness uniformity: {light:.3%}\n"
-                   f"Color accuracy: {color_acc:.3f}")
-    debug_file += ("Reference values FADGI, 2016: Prints and photographs\n"
-                   "\tdE: 4* <= 2, 3* <= 4\n"
-                   "\tTr: 4* <= 2, 3* <= 4\n"
-                   "\tWb: 4* <= 2, 3* <= 4\n"
-                   "\tLu: 4* <= 1, 3* <= 3\n"
-                   "\tCa: 4* < 2, 3* < 4 \n")
 
     with open(f"{fname}.txt", "w", encoding="utf-8") as f:
         f.write(debug_file)
