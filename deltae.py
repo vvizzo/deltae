@@ -698,7 +698,12 @@ def calculate_from_image(fname: str):
                    "\tLu: 4* <= 1, 3* <= 3\n"
                    "\tCa: 4* < 2, 3* < 4 \n")
 
-    term_string += ("\ndeltae.py, Mikołaj Machowski 2024")
+    exif_data = os.popen("exiftool -Filename -Model -Lens "
+                         "-ProfileDescription -BitsPerSample -XResolution "
+                         f"{re.escape(cc_file.filename)}").read()
+    term_string = (f"{exif_data}\n"
+                   f"{term_string}"
+                   "\ndeltae.py, Mikołaj Machowski 2024")
     draw_string += (f"-background white "
                     f"-fill black "
                     f"-font Helvetica -pointsize 30 "
