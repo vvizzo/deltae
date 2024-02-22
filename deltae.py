@@ -4,7 +4,7 @@ modern ColorChecker."""
 import os
 import re
 import argparse
-from statistics import stdev
+from statistics import stdev, quantiles
 from datetime import date
 from PIL import Image
 from colormath.color_objects import LabColor, AdobeRGBColor
@@ -641,7 +641,7 @@ def calculate_from_image(fname: str):
     # Lightness uniformity
     light = get_ligthness_uniformity(image_values, deglobal)
     # Color accuracy
-    color_acc = get_color_accuracy(deltae)
+    color_acc = get_color_accuracy(deglobal)
 
     # Limit to 3 numbers after point, don't need 15
     term_string = (f"dE: {deltae:.3f}\n"
@@ -769,15 +769,15 @@ def get_ligthness_uniformity(lab_values: dict, de_values: list) -> float:
     return de_standard_deviation / l_mean
 
 
-def get_color_accuracy(de: float) -> float:
-    """ Get 90th percentile color accuracy: 2.5 average deviation
-    of all patches
-    :param de: average deviation of all patches
-    :type de: float
+def get_color_accuracy(de: list) -> float:
+    """ Get 90th percentile color accuracy of all patches
+    :param de: list of deltae of all patches
+    :type de: list
     :return: color accuracy
     :rtype: float
     """
-    return 2.5 * de
+    color_accuracy = quantiles(de, n=10)[-1]
+    return color_accuracy
 
 
 def get_patch_value(pname, cc_file: Image):
