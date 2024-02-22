@@ -5,6 +5,7 @@ import os
 import re
 import argparse
 from statistics import stdev
+from datetime import date
 from PIL import Image
 from colormath.color_objects import LabColor, AdobeRGBColor
 from colormath.color_diff import delta_e_cie2000
@@ -673,7 +674,7 @@ def calculate_from_image(fname: str):
                         f"-draw "
                         f"'rectangle {pv.x},{pv.y} "
                         f"{pv.x+psize},{pv.y+psize}' "
-                        f"-font Helvetica -pointsize 30 "
+                        f"-font Courier -pointsize 30 "
                         f"-fill white -stroke black -strokewidth 1 "
                         f"-draw "
                         f"'text {pv.x},{pv.y+psize+30} \"{pv.d:.2f}\"' "
@@ -698,15 +699,19 @@ def calculate_from_image(fname: str):
                    "\tLu: 4* <= 1, 3* <= 3\n"
                    "\tCa: 4* < 2, 3* < 4 \n")
 
-    exif_data = os.popen("exiftool -Filename -Model -Lens "
+    # Get list of properties about file and add them to file
+    exif_data = os.popen("exiftool -Filename -Creator "
+                         "-Model -SerialNumber -Lens "
                          "-ProfileDescription -BitsPerSample -XResolution "
                          f"{re.escape(cc_file.filename)}").read()
+    exif_data = re.sub('[^\S\n\v\f\r\u2028\u2029]+', ' ', exif_data, re.A)
     term_string = (f"{exif_data}\n"
                    f"{term_string}"
-                   "\ndeltae.py, Mikołaj Machowski 2024")
+                   f"\n{date.isoformat(date.today())}, "
+                   "deltae.py, Mikołaj Machowski 2024")
     draw_string += (f"-background white "
                     f"-fill black "
-                    f"-font Helvetica -pointsize 30 "
+                    f"-font Courier -pointsize 30 "
                     f"label:'{term_string}' -append "
                     )
 
