@@ -6,6 +6,7 @@ import re
 import argparse
 from statistics import stdev, quantiles
 from datetime import date
+from collections import namedtuple
 from PIL import Image
 from colormath.color_objects import LabColor, AdobeRGBColor
 from colormath.color_diff import delta_e_cie2000
@@ -643,28 +644,27 @@ def calculate_from_image(fname: str):
     # Color accuracy
     color_acc = get_color_accuracy(deglobal)
 
+    # Create string with exif data
+    exif_data = get_exif_data(cc_file.filename)
+    exif_fadgi_str = create_exif_string(exif_data,
+                                        deltae,
+                                        tone,
+                                        wbalance,
+                                        light,
+                                        color_acc)
+
     # Limit to 3 numbers after point, don't need 15
-    term_string = (f"dE: {deltae:.3f}\n"
-                   f"Tone response: {tone:.3f}\n"
-                   f"White balance: {wbalance:.3f}\n"
-                   f"Lightness uniformity: {light:.3%}\n"
-                   f"Color accuracy: {color_acc:.3f}\n"
-                    "Reference values FADGI, 2016: Prints and photographs\n"
-                    "\tdE: 4* <= 2, 3* <= 4\n"
-                    "\tTr: 4* <= 2, 3* <= 4\n"
-                    "\tWb: 4* <= 2, 3* <= 4\n"
-                    "\tLu: 4* <= 1, 3* <= 3\n"
-                    "\tCa: 4* < 2, 3* < 4 \n"
-                    )
+    term_string = f"{exif_fadgi_str}"
 
-    print(term_string)
-
-    # Create debug image
+    # Initialize ImageMagick command
     draw_string = ""
+    # Initialize debug file content
     debug_file = ""
     for pn, pv in checker_values.items():
         # Stuff for magick drawing
-        if pv.d < 4.0:
+        # Marker becomes red when dE bigger than 3.0 which means
+        # it falls below 3* in FADGI2023
+        if pv.d <= 3.5:
             stroke = "green"
         else:
             stroke = "red"
@@ -674,7 +674,7 @@ def calculate_from_image(fname: str):
                         f"-draw "
                         f"'rectangle {pv.x},{pv.y} "
                         f"{pv.x+psize},{pv.y+psize}' "
-                        f"-font Courier -pointsize 30 "
+                        f"-font Consolas -pointsize 30 "
                         f"-fill white -stroke black -strokewidth 1 "
                         f"-draw "
                         f"'text {pv.x},{pv.y+psize+30} \"{pv.d:.2f}\"' "
@@ -685,35 +685,19 @@ def calculate_from_image(fname: str):
                        f"{pv.rgb_b * 256:.2f}, "
                        f"\tdE2k - {pv.d:.3f}\n")
 
-    # Create debug file
-    debug_file += (f"\n"
-                   f"dE: {deltae:.3f}\n"
-                   f"Tone response: {tone:.3f}\n"
-                   f"White balance: {wbalance:.3f}\n"
-                   f"Lightness uniformity: {light:.3%}\n"
-                   f"Color accuracy: {color_acc:.3f}\n")
-    debug_file += ("Reference values FADGI, 2016: Prints and photographs\n"
-                   "\tdE: 4* <= 2, 3* <= 4\n"
-                   "\tTr: 4* <= 2, 3* <= 4\n"
-                   "\tWb: 4* <= 2, 3* <= 4\n"
-                   "\tLu: 4* <= 1, 3* <= 3\n"
-                   "\tCa: 4* < 2, 3* < 4 \n")
 
     # Get list of properties about file and add them to file
-    exif_data = os.popen("exiftool -Filename -Creator "
-                         "-Model -SerialNumber -Lens "
-                         "-ProfileDescription -BitsPerSample -XResolution "
-                         f"{re.escape(cc_file.filename)}").read()
-    exif_data = re.sub('[^\S\n\v\f\r\u2028\u2029]+', ' ', exif_data, re.A)
-    term_string = (f"{exif_data}\n"
-                   f"{term_string}"
-                   f"\n{date.isoformat(date.today())}, "
+    term_string = (f"{term_string}\n"
+                   f"{date.isoformat(date.today())}, "
                    "deltae.py, Mikołaj Machowski 2024")
     draw_string += (f"-background white "
                     f"-fill black "
-                    f"-font Courier -pointsize 30 "
+                    f"-font Consolas -pointsize 40 "
                     f"label:'{term_string}' -append "
                     )
+
+    # Create debug file
+    debug_file += (f"\n{term_string}")
 
     magick_debug_string = (f"magick -quiet {re.escape(DELTAEFILE)}[0] "
                            f"-rotate {cc_rotation} "
@@ -725,6 +709,241 @@ def calculate_from_image(fname: str):
     with open(f"{fname}.txt", "w", encoding="utf-8") as f:
         f.write(debug_file)
 
+
+def get_exif_data(fname) -> tuple:
+    """Get exif data for file and return it structured
+    :param fname: Name of file
+    :type fname: str
+    :return: Named tuple with structured data for exif
+    :rtype: NamedTuple
+    """
+    exif_out = os.popen("exiftool -s -S -T "
+                        "-Filename "
+                        "-FileType "
+                        "-Creator "
+                        "-ColorMode "
+                        "-XResolution "
+                        "-Make "
+                        "-Model "
+                        "-SerialNumber "
+                        "-Lens "
+                        "-ProfileDescription "
+                        "-BitsPerSample "
+                        "-Compression "
+                        f"{re.escape(fname)}").read().split("\t")
+
+    Edata = namedtuple('Edata',
+                       ['filename', 'filetype', 'creator', 'colormode',
+                        'resolution', 'make', 'model', 'serialnumber',
+                        'lens', 'profile', 'bps'])
+
+    # Remove last element, we get it only to scrap and get rid of new line
+    # added by Windows version of exiftool
+    exifd = Edata._make(exif_out[:-1])
+
+    return exifd
+
+
+def create_exif_string(ex_data, de, tone, wb, lu, ca) -> str:
+    """Create string with exif data for debug files
+    It will consists of two parts. General metadata and FADGI
+    :param exifdata: Exif data in namedtuple
+    :type exifdata: namedtuple
+    :param de: deltaE 2000
+    :type de: float
+    :param tone: tone
+    :type tone: float
+    :param wb: white balance
+    :type tone: float
+    :param lu: Light uniformity
+    :type tone: float
+    :param ca: Color accuracy
+    :type tone: float
+    :return: string to add for jpg and text files
+    :rtype: str
+    """
+
+    serial_no = ""
+    if ex_data.serialnumber != "-":
+        serial_no = f" ({ex_data.serialnumber})"
+
+    general_txt = (f"Filename : {ex_data.filename}\n"
+                   f"Author : {ex_data.creator}\n"
+                   f"Camera : {ex_data.make} {ex_data.model}{serial_no}\n"
+                   f"Lens : {ex_data.lens}")
+
+    fadgi_data = (de, ex_data.filetype, ex_data.bps, ex_data.profile,
+                  ex_data.colormode, tone, wb, lu, ca)
+
+    fadgi_stars = get_stars(fadgi_data)
+
+    fadgi_txt = ("FADGI2023: prints, photographs, "
+                 "maps, posters, paintings, other 2D art\n"
+                 f"DeltaE 2000: {de:.3f} {fadgi_stars.de}\n"
+                 f"Filetype: {ex_data.filetype} {fadgi_stars.ft}\n"
+                 f"Bit depth: {ex_data.bps} {fadgi_stars.bd}\n"
+                 f"Color profile: {ex_data.profile} {fadgi_stars.icc}\n"
+                 f"Color mode: {ex_data.colormode} {fadgi_stars.cm}\n"
+                 f"Tone response: {tone:.3f} {fadgi_stars.tone}\n"
+                 f"White balance: {wb:.3f} {fadgi_stars.wb}\n"
+                 f"Lightness uniformity: {lu:.3%} {fadgi_stars.lu}\n"
+                 f"Color accuracy: {ca:.3f} {fadgi_stars.ca}\n"
+                 )
+
+    return general_txt + "\n\n" + fadgi_txt
+
+
+def get_stars(color_data: tuple) -> tuple:
+    """Process parameters of color and return star rating according
+    to FADGI 20223
+    :param color_data: color data
+    :type color_data: tuple
+    :return: named tuple of strings
+    :rtype: namedtuple
+
+    FADGI 2023
+    Prints and photographs,
+    Bound volumes: rare and special materials
+    Documents (unbound): manuscripts and other rare and special materials
+    Documents (unbound): general collections
+    Oversize items: maps, posters and other materials
+    Paintings and other 2D art
+
+    File Format
+    1-4 stars TIFF, JP2 (JPEG 2000)
+    Bit depth
+    1-2 stars 8 bit
+    3-4 stars 16 bit
+    Color space
+    1-2 sRGB
+    3-4 Adobe RGB (1998), ProPhoto, ECIRGB_v2
+    Color Mode
+    1 Grayscale
+    2-4 Color (RGB)
+    Tone Response
+    1 <= 6, 2 <= 4.5, 3 <= 3, 4 <= 1.5
+    White balance
+    1 <= 8, 2 <= 6, 3 <= 4, 4 <= 2
+    Lightness uniformity
+    1 <= 8%, 2 <= 5%, 3 <= 3%, 4 <= 1%
+    DeltaE 2k
+    1 <= 6.5, 2 <= 5, 3 <= 3.5, 4 <= 2
+    Color accuracy
+    1 <= 13, 2 <= 10, 3 <= 7, 4 <= 4
+    Color channel Misregistration (unimplemented)
+    1 <= 1.2, 2 <= 0.8, 3 <= 0.5, 4 <= 0.33
+    SFR10 (unimplemented)
+    1 >= 60%, 2 >= 70%, 3 >= 80%, 4 >= 90%
+    SFR50 (unimplemented)
+    ---
+    Sharpening (units max modulation) (unimplemented)
+    1 < 1.15, 2 < 1.1, 3 < 1.05, 4 <= 1.02
+    Noise (Upper limit, Units Std Dev of L*) (unimplemented)
+    1 <= 4, 2 <= 3, 3 <= 2, 4 <= 1
+
+
+    """
+    deltae, ftype, bdepth, icc, cmode, toner, whiteb, lunif, cacc = color_data
+
+    init_data = []
+
+    # Deltae test
+    if deltae <= 2:
+        init_data.append(4)
+    elif deltae <= 3.5:
+        init_data.append(3)
+    elif deltae <= 5:
+        init_data.append(2)
+    elif deltae <= 6.5:
+        init_data.append(1)
+    else:
+        init_data.append("No stars!")
+
+    # Filetype test
+    if ftype in ["TIFF", "JP2"]:
+        init_data.append(4)
+    else:
+        init_data.append(f"Unsupported format ({ftype})")
+
+    # Bitdepth test
+    if bdepth == "16 16 16":
+        init_data.append(4)
+    elif bdepth == "8 8 8":
+        init_data.append(2)
+    else:
+        init_data.append("Unknown bit-depth")
+
+    # ICC test
+    if icc in ["Adobe RGB (1998)", "ProPhoto", "ECIRGB_v2"]:
+        init_data.append(4)
+    elif icc == "sRGB":
+        init_data.append(2)
+    else:
+        init_data.append(f"Unknown profile ({icc})")
+
+    # Color mode test
+    if cmode == "RGB":
+        init_data.append(4)
+    else:
+        init_data.append(f"Not color! ({cmode})")
+
+    # Tone response test
+    if toner <= 1.5:
+        init_data.append(4)
+    elif toner <= 3:
+        init_data.append(3)
+    elif toner <= 4.5:
+        init_data.append(2)
+    elif toner <= 6:
+        init_data.append(1)
+    else:
+        init_data.append("-")
+
+    # White balance test
+    if whiteb <= 2:
+        init_data.append(4)
+    elif whiteb <= 4:
+        init_data.append(3)
+    elif whiteb <= 6:
+        init_data.append(2)
+    elif whiteb <= 8:
+        init_data.append(1)
+    else:
+        init_data.append("-")
+
+    # Lightness uniformity test
+    if lunif <= 1:
+        init_data.append(4)
+    elif lunif <= 3:
+        init_data.append(3)
+    elif lunif <= 5:
+        init_data.append(2)
+    elif lunif <= 6.5:
+        init_data.append(1)
+    else:
+        init_data.append("-")
+
+    # Color accuracy test
+    if cacc <= 4:
+        init_data.append(4)
+    elif cacc <= 7:
+        init_data.append(3)
+    elif cacc <= 10:
+        init_data.append(2)
+    elif cacc <= 13:
+        init_data.append(1)
+    else:
+        init_data.append("-")
+
+    # STAR = "★"   # ALT+9733
+    STAR = "*"
+    final_stars = [x * STAR if isinstance(x, int) else x for x in init_data]
+
+    Stars = namedtuple('Stars', 'de, ft, bd, icc, cm, tone, wb, lu, ca')
+
+    fadgi = Stars._make(final_stars)
+
+    return fadgi
 
 def get_tone_wb(tested: dict, reference: dict) -> tuple:
     """Get tone response for CC as defined in FADGI:
