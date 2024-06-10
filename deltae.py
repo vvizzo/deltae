@@ -4,12 +4,13 @@ modern ColorChecker."""
 import os
 import re
 import argparse
-from statistics import stdev, quantiles
-from datetime import date
 from collections import namedtuple
+from datetime import date
+from statistics import stdev, quantiles
+from typing import Any, NamedTuple
 from PIL import Image
 from colormath.color_objects import LabColor, AdobeRGBColor
-from colormath.color_diff import delta_e_cie2000
+from colormath.color_diff import delta_e_cie1976, delta_e_cie2000
 from colormath.color_conversions import convert_color
 
 
@@ -470,7 +471,7 @@ checker_data = {"cc24":
                 }
 
 text_extensions = ('.txt', '.csv')
-image_extenstions = ('.png', '.jpg', '.tif')
+image_extensions = ('.png', '.jpg', '.tif')
 
 
 class Patch:
@@ -585,6 +586,26 @@ def process_color_data(data_file) -> dict:
     return cc_vals
 
 
+def delta_e_calc(color1, color2) -> float:
+    """Return values of deltaE depending on CLI option.
+    Available options are 2k (dE 2000) and 76 (dE 1976)
+    :param color1: first color
+    :type color1: iterable
+    :param color2: second color
+    :type color2: iterable
+    :return: calculated deltaE value
+    :rtype: float
+    """
+    calculated_delta_e = "100.0"
+
+    if args.deltae == "2k":
+        calculated_delta_e = delta_e_cie2000(color1, color2)
+    elif args.deltae == "76":
+        calculated_delta_e = delta_e_cie1976(color1, color2)
+
+    return calculated_delta_e
+
+
 def calculate_from_text(fname: str):
     """Calculate deltae from text file in deltae.picturae format.
     :param fname: file name
@@ -594,15 +615,16 @@ def calculate_from_text(fname: str):
     try:
         with open(fname, encoding="utf-8") as f:
             patches = f.readlines()[5:29]
-    except IndexError:
-        raise SystemExit("something wrong with file, didn't get 24 patches.")
+    except IndexError as ecft:
+        raise SystemExit("something wrong with file, "
+                         "didn't get 24 patches.") from ecft
 
     deglobal = []
     for line in patches:
         data = line.strip().split(',')
         # 0 - patch name, 4 - L, 5 - a, 6 - b
-        point = delta_e_cie2000(cc_values[data[0]],
-                                LabColor(data[4], data[5], data[6]))
+        point = delta_e_calc(cc_values[data[0]],
+                             LabColor(data[4], data[5], data[6]))
         deglobal.append(point)
 
     # Calculate global average
@@ -627,8 +649,7 @@ def calculate_from_image(fname: str):
 
     deglobal = []
     for patch in cc_values:
-        point = delta_e_cie2000(cc_values[patch],
-                                image_values[patch])
+        point = delta_e_calc(cc_values[patch], image_values[patch])
 
         checker_values[patch].de = point
 
@@ -685,7 +706,6 @@ def calculate_from_image(fname: str):
                        f"{pv.rgb_b * 256:.2f}, "
                        f"\tdE2k - {pv.d:.3f}\n")
 
-
     # Get list of properties about file and add them to file
     term_string = (f"{term_string}\n"
                    f"{date.isoformat(date.today())}, "
@@ -729,13 +749,17 @@ def get_exif_data(fname) -> tuple:
                         "-Lens "
                         "-ProfileDescription "
                         "-BitsPerSample "
+                        "-ShutterSpeed "
+                        "-Aperture "
+                        "-ISO "
                         "-Compression "
                         f"{re.escape(fname)}").read().split("\t")
 
     Edata = namedtuple('Edata',
                        ['filename', 'filetype', 'creator', 'colormode',
                         'resolution', 'make', 'model', 'serialnumber',
-                        'lens', 'profile', 'bps'])
+                        'lens', 'profile', 'bps',
+                        'shutter', 'aperture', 'iso'])
 
     # Remove last element, we get it only to scrap and get rid of new line
     # added by Windows version of exiftool
@@ -767,35 +791,52 @@ def create_exif_string(ex_data, de, tone, wb, lu, ca) -> str:
     if ex_data.serialnumber != "-":
         serial_no = f" ({ex_data.serialnumber})"
 
-    general_txt = (f"Filename : {ex_data.filename}\n"
-                   f"Author : {ex_data.creator}\n"
-                   f"Camera : {ex_data.make} {ex_data.model}{serial_no}\n"
-                   f"Lens : {ex_data.lens}")
+    general_txt = (f"{'Filename:':9} {ex_data.filename}\n"
+                   f"{'Author:':9} {ex_data.creator}\n"
+                   f"{'Camera:':9} {ex_data.make} {ex_data.model}{serial_no}\n"
+                   f"{'Lens:':9} {ex_data.lens}\n"
+                   f"{'ISO:':9} {ex_data.iso:9} "
+                   f"{'Aperture:':9} {ex_data.aperture:9} "
+                   f"{'Shutter:':9} {ex_data.shutter:9}")
 
     fadgi_data = (de, ex_data.filetype, ex_data.bps, ex_data.profile,
                   ex_data.colormode, tone, wb, lu, ca)
 
     fadgi_stars = get_stars(fadgi_data)
 
-    fadgi_txt = ("FADGI2023: prints, photographs, "
-                 "maps, posters, paintings, other 2D art\n"
-                 f"DeltaE 2000: {de:.3f} {fadgi_stars.de}\n"
-                 f"Filetype: {ex_data.filetype} {fadgi_stars.ft}\n"
-                 f"Bit depth: {ex_data.bps} {fadgi_stars.bd}\n"
-                 f"Color profile: {ex_data.profile} {fadgi_stars.icc}\n"
-                 f"Color mode: {ex_data.colormode} {fadgi_stars.cm}\n"
-                 f"Tone response: {tone:.3f} {fadgi_stars.tone}\n"
-                 f"White balance: {wb:.3f} {fadgi_stars.wb}\n"
-                 f"Lightness uniformity: {lu:.3%} {fadgi_stars.lu}\n"
-                 f"Color accuracy: {ca:.3f} {fadgi_stars.ca}\n"
-                 )
+    det_txt = ""
 
-    return general_txt + "\n\n" + fadgi_txt
+    if args.deltae == "2k":
+
+        det_txt = ("FADGI2023: prints, photographs, "
+                   "maps, posters, paintings, other 2D art\n\n"
+                   f"{'DeltaE 2000:':23}{fadgi_stars.de}{de:.3f}\n"
+                   f"{'Filetype:':23}{fadgi_stars.ft}{ex_data.filetype}\n"
+                   f"{'Bit depth:':23}{fadgi_stars.bd}{ex_data.bps}\n"
+                   f"{'Color profile:':23}{fadgi_stars.icc}{ex_data.profile}\n"
+                   f"{'Color mode:':23}{fadgi_stars.cm}{ex_data.colormode}\n"
+                   f"{'Tone response:':23}{fadgi_stars.tone}{tone:.3f}\n"
+                   f"{'White balance:':23}{fadgi_stars.wb}{wb:.3f}\n"
+                   f"{'Lightness uniformity:':23}{fadgi_stars.lu}{lu:.3%}\n"
+                   f"{'Color accuracy:':23}{fadgi_stars.ca}{ca:.3f}\n"
+                   )
+
+    elif args.deltae == "76":
+
+        det_txt = ("Metamorfoze: preserving the paper heritage\n\n"
+                   f"{'DeltaE 1976:':23}{de:.3f}\n"
+                   f"{'Filetype:':23}{ex_data.filetype}\n"
+                   f"{'Bit depth:':23}{ex_data.bps}\n"
+                   f"{'Color profile:':23}{ex_data.profile}\n"
+                   f"{'Color mode:':23}{ex_data.colormode}\n"
+                   )
+
+    return general_txt + "\n\n" + det_txt
 
 
-def get_stars(color_data: tuple) -> tuple:
+def get_stars(color_data: tuple) -> NamedTuple:
     """Process parameters of color and return star rating according
-    to FADGI 20223
+    to FADGI 2023
     :param color_data: color data
     :type color_data: tuple
     :return: named tuple of strings
@@ -845,7 +886,7 @@ def get_stars(color_data: tuple) -> tuple:
     """
     deltae, ftype, bdepth, icc, cmode, toner, whiteb, lunif, cacc = color_data
 
-    init_data = []
+    init_data: list[Any] = []
 
     # Deltae test
     if deltae <= 2:
@@ -863,12 +904,12 @@ def get_stars(color_data: tuple) -> tuple:
     if ftype in ["TIFF", "JP2"]:
         init_data.append(4)
     else:
-        init_data.append(f"Unsupported format ({ftype})")
+        init_data.append("-")
 
     # Bitdepth test
-    if bdepth == "16 16 16":
+    if bdepth in ("16 16 16", "16"):
         init_data.append(4)
-    elif bdepth == "8 8 8":
+    elif bdepth in ("8 8 8", "8"):
         init_data.append(2)
     else:
         init_data.append("Unknown bit-depth")
@@ -885,7 +926,7 @@ def get_stars(color_data: tuple) -> tuple:
     if cmode == "RGB":
         init_data.append(4)
     else:
-        init_data.append(f"Not color! ({cmode})")
+        init_data.append(f"{cmode}")
 
     # Tone response test
     if toner <= 1.5:
@@ -937,13 +978,15 @@ def get_stars(color_data: tuple) -> tuple:
 
     # STAR = "★"   # ALT+9733
     STAR = "*"
-    final_stars = [x * STAR if isinstance(x, int) else x for x in init_data]
+    final_stars = [f"{x * STAR:10}"
+                   if isinstance(x, int) else f"{x:10}" for x in init_data]
 
     Stars = namedtuple('Stars', 'de, ft, bd, icc, cm, tone, wb, lu, ca')
 
     fadgi = Stars._make(final_stars)
 
     return fadgi
+
 
 def get_tone_wb(tested: dict, reference: dict) -> tuple:
     """Get tone response for CC as defined in FADGI:
@@ -965,8 +1008,7 @@ def get_tone_wb(tested: dict, reference: dict) -> tuple:
         ref = reference[patch_name].lab_l
         tone_response.append(abs(test - ref))
         # test white balance
-        point_gray = delta_e_cie2000(tested[patch_name],
-                                     reference[patch_name])
+        point_gray = delta_e_calc(tested[patch_name], reference[patch_name])
         white_balance.append(point_gray)
 
     return max(tone_response), max(white_balance)
@@ -1086,6 +1128,11 @@ if __name__ == '__main__':
                          W - greys are on the left,
                          N - greys are on the top,
                          E - greys are on the left""")
+    ap.add_argument("--deltae", "-d", type=str,
+                    nargs="?", default="2k", choices=['2k', '76'],
+                    help="""DeltaE difference according to:
+                         - 2k (default) deltaE 2000 (ass. with FADGI)
+                         - 76 deltaE 1976 (ass. with Metamorfoze)""")
     ap.add_argument("--color", required=False, type=str,
                     help="L*a*b* data in file a la CTAGS")
     ap.add_argument("--coordinates", "-x", required=False, type=str,
@@ -1113,12 +1160,12 @@ if __name__ == '__main__':
 
     try:
         DELTAEFILE = args.testfile
-    except IndexError:
-        raise SystemExit('usage: cvs file from deltae required')
+    except IndexError as ede:
+        raise SystemExit('usage: cvs file from deltae required') from ede
 
     if DELTAEFILE.endswith(text_extensions):
         calculate_from_text(DELTAEFILE)
-    elif DELTAEFILE.endswith(image_extenstions):
+    elif DELTAEFILE.endswith(image_extensions):
         calculate_from_image(DELTAEFILE)
     else:
         raise SystemExit(f'usage: don\'t recognize extension of {DELTAEFILE}')
