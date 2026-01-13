@@ -9,10 +9,13 @@ from datetime import date
 from statistics import stdev, quantiles
 from typing import Any, NamedTuple
 from PIL import Image
-from colormath.color_objects import LabColor, AdobeRGBColor
-from colormath.color_diff import delta_e_cie1976, delta_e_cie2000
-from colormath.color_conversions import convert_color
+from colormath2.color_objects import LabColor, AdobeRGBColor
+from colormath2.color_diff import delta_e_cie1976, delta_e_cie2000
+from colormath2.color_conversions import convert_color
 
+# How to include resolution checking?
+# Normalize mini CC to S, precise cropping ( :( ) and adjust percentages
+# of horizontal position: A+6 B+5 C+4 D+3 E+2 F+1
 
 # Make checker data global variable, accessible for all functions
 # and imports
@@ -709,7 +712,7 @@ def calculate_from_image(fname: str):
     # Get list of properties about file and add them to file
     term_string = (f"{term_string}\n"
                    f"{date.isoformat(date.today())}, "
-                   "deltae.py, Mikołaj Machowski 2024")
+                   "deltae.py, Mikołaj Machowski 2026")
     draw_string += (f"-background white "
                     f"-fill black "
                     f"-font Consolas -pointsize 40 "
