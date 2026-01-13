@@ -1,20 +1,6 @@
 # deltae.py
 Analyze dE in text files and images 
 
-Popular go-to page for checking dE in images is deltae.picturae.com ( https://deltae.picturae.com/ ; later d.p.c).
-Sadly, while it is working it was not updated in several years. While new features are not always welcome
-it is working with old reference values for X-Rite Colorchecker as for before November 2014:
-
-https://www.xrite.com/pl-pl/service-support/new_color_specifications_for_colorchecker_sg_and_classic_charts
-
-Difference between values for Colorchecker before and after November 2014 is 1.09 dE so while it is not 
-distinguishable for human eye it matters when trying to get 4 stars on FADGI scale which require total dE of less
-than 3.
-
-Another issue with d.p.c is Lab values of patches. Tested on the same file in Adobe Photoshop 
-and in deltae.py script patches have very similar values. Values I got from d.p.c site are different. These 
-errors accumulate and in images in difficult lightning conditions final dE differs up to 4 between d.p.c and deltae.py.
-
 ## Usage
 ```
 usage: deltae.py [-h] [--checker [{cc24,halfcc,nanocc,halfnanocc,gtdl,gt20,gt10,gt05}]] [--orientation [{S,W,N,E}]] [--deltae [{2k,76}]] [--color COLOR] [--coordinates COORDINATES]
